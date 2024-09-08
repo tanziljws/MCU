@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home Control</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        button {
+            padding: 10px;
+            margin: 5px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        p {
+            font-size: 18px;
+        }
+        
+        /* Styling untuk container meter */
+        .meter-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        /* Styling untuk meteran suhu dan kelembaban */
+        .meter {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background-color: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .meter:after {
+            content: "";
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: #f0f0f0;
+            z-index: 1;
+        }
+
+        /* Suhu dan kelembaban teks di tengah */
+        .meter-text {
+            position: absolute;
+            z-index: 2;
+        }
+
+        /* Styling untuk lingkaran dinamis */
+        .meter-circle {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            clip: rect(0px, 75px, 150px, 0px);
+            background-color: #007BFF;
+            transform: rotate(0deg);
+            z-index: 0;
+            transition: transform 0.5s;
+        }
+
+        /* Lingkaran kedua untuk efek meteran penuh */
+        .meter-circle-fill {
+            clip: rect(0px, 150px, 150px, 75px);
+            background-color: #007BFF;
+        }
+    </style>
+    <script>
+        let socket;
+
+        function sendCommand(action) {
+            fetch("/toggleLamp", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ action: action })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Server response:", data);
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+        }
+
+        function turnOnLamp() {
+            sendCommand("on");
+        }
+
+        function turnOffLamp() {
+            sendCommand("off");
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            socket = io();
+
+            socket.on("lampuUpdate", (data) => {
+                console.log("Lampu status update:", data.status);
+                document.getElementById("lampStatus").textContent = data.status === "on" ? "Lampu ON" : "Lampu OFF";
+            });
+
+            socket.on("temperatureUpdate", (data) => {
+                console.log("Temperature update:", data.temperature, "Humidity update:", data.humidity);
+                if (data.temperature !== undefined && data.humidity !== undefined) {
+                    document.getElementById("temperatureText").textContent = data.temperature + " °C";
+                    document.getElementById("humidityText").textContent = data.humidity + " %";
+
+                    // Atur rotasi meteran suhu
+                    const tempMeter = document.getElementById("temperatureMeter");
+                    const tempRotate = (data.temperature / 100) * 180; // Sesuaikan skala rotasi
+                    tempMeter.style.transform = `rotate(${tempRotate}deg)`;
+
+                    // Atur rotasi meteran kelembaban
+                    const humMeter = document.getElementById("humidityMeter");
+                    const humRotate = (data.humidity / 100) * 180; // Sesuaikan skala rotasi
+                    humMeter.style.transform = `rotate(${humRotate}deg)`;
+                } else {
+                    console.log("Received data is invalid:", data);
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Smart Home Control</h1>
+    <button onclick="turnOnLamp()">Turn On Lamp</button>
+    <button onclick="turnOffLamp()">Turn Off Lamp</button>
+    <p>Status Lampu: <span id="lampStatus">Lampu OFF</span></p>
+
+    <!-- Tambahkan meteran untuk suhu dan kelembaban -->
+    <div class="meter-container">
+        <!-- Meteran Suhu -->
+        <div class="meter">
+            <div class="meter-circle meter-circle-fill"></div>
+            <div class="meter-circle" id="temperatureMeter"></div>
+            <div class="meter-text" id="temperatureText">-- °C</div>
+        </div>
+        
+        <!-- Meteran Kelembaban -->
+        <div class="meter">
+            <div class="meter-circle meter-circle-fill"></div>
+            <div class="meter-circle" id="humidityMeter"></div>
+            <div class="meter-text" id="humidityText">-- %</div>
+        </div>
+    </div>
+</body>
+</html>

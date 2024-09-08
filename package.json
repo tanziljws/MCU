@@ -1,0 +1,23 @@
+{
+  "name": "mcu",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@serialport/parser-readline": "^12.0.0",
+    "express": "^4.19.2",
+    "fetch": "^1.1.0",
+    "mcu": "file:",
+    "node-fetch": "^3.3.2",
+    "nodemon": "^3.1.4",
+    "serialport": "^12.0.0",
+    "socket.io": "^4.7.5"
+  }
+}
